@@ -172,6 +172,9 @@ Due to the framework's design features or development progress, the framework cu
 ## Contributing to This Project
 We warmly welcome your contributions to this project.
 
+## Project Status
+- using bun runtime
+
 ## Future Plans
 
 -   [15%]: # Improve .d.ts files, enhance type hinting
