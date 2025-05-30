@@ -3,28 +3,29 @@ import { v4 as uuidV4 } from 'uuid';
 export function uuid(): string {
     return uuidV4();
 }
-export function isFunction(obj: any): obj is Function {
+export function isFunction(obj: unknown): obj is Function { // obj: any -> unknown
     return typeof obj === 'function';
 }
-export function isClass(obj: any): obj is Function {
+export function isClass(obj: unknown): obj is Function { // obj: any -> unknown
     if (!isFunction(obj)) {
         return false;
     }
-    return /^class\s/.test(Function.prototype.toString.call(obj));
+    // Assuming obj is a function here due to the check above.
+    return /^class\s/.test(Function.prototype.toString.call(obj as Function));
 }
-export function isFragment(element: any): element is DocumentFragment {
-    return element.nodeType === Node.DOCUMENT_FRAGMENT_NODE;
+export function isFragment(element: unknown): element is DocumentFragment { // element: any -> unknown
+    return !!element && (element as Node).nodeType === Node.DOCUMENT_FRAGMENT_NODE;
 }
-export function isText(element: any): element is Text {
-    return element.nodeType === Node.TEXT_NODE;
+export function isText(element: unknown): element is Text { // element: any -> unknown
+    return !!element && (element as Node).nodeType === Node.TEXT_NODE;
 }
-export function isHTMLElement(element: any): element is HTMLElement {
+export function isHTMLElement(element: unknown): element is HTMLElement { // element: any -> unknown
     return element instanceof HTMLElement;
 }
-export function isHTMLCollection(element: any): element is HTMLCollection {
+export function isHTMLCollection(element: unknown): element is HTMLCollection { // element: any -> unknown
     return element instanceof HTMLCollection;
 }
-export function cssValue(value: any): string {
+export function cssValue(value: unknown): string { // value: any -> unknown
     if (typeof value === 'number') {
         return `${value}`;
     }

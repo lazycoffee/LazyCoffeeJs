@@ -1,36 +1,36 @@
-# LazyCoffee Object oriented development framework
+# LazyCoffee Object Oriented Development Framework
 
-一款简单易用的，不需要学习成本的，面向对象的web开发框架。
+A simple, easy-to-use, object-oriented web development framework with no learning curve.
 
-## beta
+## Beta
 
-当前版本为 beta 版本，可能存在 bug，请勿用于生产环境，如有问题请随时提 issue。
+The current version is a beta version and may contain bugs. Please do not use it in a production environment. If you encounter any issues, please feel free to submit an issue.
 
-## 快速开始
+## Quick Start
 
-### 安装
+### Installation
 
 ```bash
 npm install lc_ood_framework
 ```
 
-### TypeScript 配置
+### TypeScript Configuration
 
-如果需要使用 TypeScript，需要在 tsconfig.json 中添加以下配置：
+If you need to use TypeScript, you need to add the following configuration to your `tsconfig.json`:
 
 ```json
 {
     "compilerOptions": {
         "jsx": "react-jsx",
         "jsxImportSource": "lc_ood_framework"
-        // 其他配置...
+        // Other configurations...
     }
 }
 ```
 
-### 构建工具配置
+### Build Tool Configuration
 
-当前只测试过 RollDown 配置，其他构建工具还没测试过，后面会更新。
+Currently, only RollDown configuration has been tested. Other build tools have not yet been tested and will be updated later.
 
 ```json
 // rolldown
@@ -39,13 +39,13 @@ npm install lc_ood_framework
         "mode": "automatic",
         "jsxImportSource": "lc_ood_framework"
     }
-    // 其他配置...
+    // Other configurations...
 }
 ```
 
-### 使用
+### Usage
 
-使用方法跟现流行框架并无区别：
+Usage is no different from current popular frameworks:
 
 ```tsx
 import { Component } from 'lc_ood_framework';
@@ -58,26 +58,26 @@ const app = new App();
 app.mount('#app');
 ```
 
-## 框架设计特性
+## Framework Design Features
 
-本框架很多参考了 React, Vue 的设计思想，以下是本框架的设计特性：
+This framework draws heavily on the design philosophies of React and Vue. Here are the design features of this framework:
 
-### 任意地方修改组件状态变量
+### Modify Component State Variables Anywhere
 
-虽然跟 React, Vue 一样，本框架状态变量也是从上向下传递，但在修改状态变量时，你不需要在上层声明状态变量，然后用来控制下层组件，所有组件都是独立的，跟原生 dom 一样，你只需找到元素，然后修改元素即可。例如你创建了一个弹窗组件，然后想弹窗提示用户时，你只需找到该组件实例，然后调用其弹窗方法即可：
+Although, like React and Vue, state variables in this framework are passed down from top to bottom, you do not need to declare state variables in the upper layer to control lower-level components when modifying state variables. All components are independent, just like native DOM elements. You only need to find the element and then modify it. For example, if you create a dialog component and want to show a dialog to the user, you just need to find the component instance and call its dialog method:
 
 ```tsx
-import {querOne} from 'lc_ood_framework';
+import { queryOne } from 'lc_ood_framework'; // Corrected: querOne to queryOne
 
 function submit() {
     const confirmModal = queryOne('#confirm-modal');
-    confirmModal.open('Are you sure?', fcuntion () {
+    confirmModal.open('Are you sure?', function () { // Corrected: fcuntion to function
         // do something
     });
 }
 ```
 
-弹窗组件里，所有的状态变量都封装在 class 里，不需要从别的地方传入：
+In the dialog component, all state variables are encapsulated within the class and do not need to be passed in from elsewhere:
 
 ```tsx
 import { Component } from 'lc_ood_framework';
@@ -85,8 +85,10 @@ import { Component } from 'lc_ood_framework';
 class ConfirmModal extends Component {
     state = {
         visible: false,
+        content: '', // Added for clarity, as it's used in render
+        callback: null as (() => void) | null, // Added for clarity
     };
-    open(content, callback) {
+    open(content: string, callback: () => void) { // Added types for clarity
         this.setState({
             visible: true,
             content,
@@ -97,15 +99,16 @@ class ConfirmModal extends Component {
         const style = {
             display: this.state.visible ? 'block' : 'none',
         };
-        return <div style={style}>{content}</div>;
+        // Assuming this.state.content is used for the dialog message
+        return <div style={style}>{this.state.content}</div>; 
     }
-    // 其他代码
+    // Other code
 }
 ```
 
-### 状态变量为不可变变量
+### State Variables are Immutable
 
-在 immer 的帮助下，你不需要考虑状态变量的可变性，你只需直接修改，即可触发 DOM 元素的变化。
+With the help of Immer, you don't need to worry about the mutability of state variables. You can just modify them directly, and it will trigger changes in the DOM elements.
 
 ```tsx
 import { Component } from 'lc_ood_framework';
@@ -136,7 +139,7 @@ class App extends Component {
         return (
             <ul>
                 {this.state.todoList.map((todo) => (
-                    <li>
+                    <li key={todo.id}> {/* Added key for list items */}
                         [{todo.done ? 'done' : ''}]:
                         {todo.content}
                     </li>
@@ -144,41 +147,41 @@ class App extends Component {
             </ul>
         );
     }
-    // 其他代理
+    // Other methods/logic
 }
 ```
 
-## 代码单词语义
+## Code Terminology
 
-以下是本框架的代码单词语义：
+Here is the code terminology for this framework:
 
--   `Component`：组件
--   `State`：状态变量
--   `Props`：属性
--   `node`: AST 节点
--   `element`: DOM 元素
+-   `Component`: Component
+-   `State`: State variable
+-   `Props`: Properties
+-   `node`: AST node
+-   `element`: DOM element
 
-## 问题
+## Issues
 
-由于框架设计特性本身或进度的原因，目前框架存在以下问题：
+Due to the framework's design features or development progress, the framework currently has the following issues:
 
-1. 当 render 函数返回为空时，就不会有任何元素附着在 DOM 树上，与原生查找逻辑一样，无法通过`query`方法找到该组件实例。
-2. 组件的属性会透传到 render 根元素上
-3. 跟 React 一样，添加事件时需要以 on 开头，事件名以驼峰命名，例如 onClick, onMouseEnter, onMouseLeave 等。
+1. When the `render` function returns empty (e.g. null or undefined), no element will be attached to the DOM tree. Similar to native DOM lookup logic, the component instance cannot be found using the `query` method.
+2. Component properties are passed through to the root element of the `render` output.
+3. Similar to React, event handlers need to start with `on` and the event name should be in camelCase, e.g., `onClick`, `onMouseEnter`, `onMouseLeave`.
 
-## 为本项目贡献
-我们非常欢迎您为本项目贡献代码。
+## Contributing to This Project
+We warmly welcome your contributions to this project.
 
-## 未来计划
+## Future Plans
 
--   [15%]: # 完善.d.ts 文件，增加类型提示
--   [0%]: # 单元测试，增加框架健壮性
--   [0%]: # 本框架 Logo
+-   [15%]: # Improve .d.ts files, enhance type hinting
+-   [0%]: # Unit tests, increase framework robustness
+-   [0%]: # Framework Logo
 
-## 作者失业中
+## Author is Currently Unemployed
 
-本人当前失业中，如不介意本人年龄较大（40），可以联系本人：elantion@gmail.com,18666133756（微信同号）
-曾在魅族、华为大公司工作过，有管理小团队的经验，web/nodejs 双料全栈开发，会基本的linux运维，热爱开源，喜欢折腾。
+I am currently unemployed. If you don't mind my relatively older age (40), you can contact me: elantion@gmail.com, 18666133756 (WeChat same number).
+I have previously worked at large companies like Meizu and Huawei, have experience managing small teams, am a full-stack web/Node.js developer, know basic Linux operations, love open source, and enjoy tinkering.
 
 ## License
 

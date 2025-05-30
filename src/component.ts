@@ -1,24 +1,25 @@
 import { produce } from 'immer';
 import { getNodeById } from './nodeTree';
 import { removeitemInArray, uuid } from './lib/helper';
+import { JSONValue } from './types/type'; // Added import
 import { createElement, createElementTree, removeNodeElement } from './element';
 import { replaceNode, updateDomAttributes } from './lib/nodeUpdater';
 import { NodeItem } from './types/nodeTree';
 
-export class Component<T extends JSONValue = Record<string, JSONValue>> {
+export class Component<T extends Record<string, JSONValue> = Record<string, JSONValue>> { // Changed constraint to Record<string, JSONValue> if JSONValue is primitive | array
     constructor() {}
-    render(props: any): NodeItem | undefined | null {
+    render(props: Record<string, unknown>): NodeItem | undefined | null { // Changed props type
         return;
     }
     state: T = {} as T;
     readonly _id: string = uuid();
     setState(nextState: Partial<T>) {
-        this.state = produce(this.state, (draft: any) =>
-            Object.assign(draft, nextState)
-        );
+        this.state = produce(this.state, (draft: T) => { // Changed draft type
+            Object.assign(draft, nextState);
+        });
         this.updateNode();
     }
-    updateState(updater: (draft: T) => any) {
+    updateState(updater: (draft: T) => void) { // Changed return type of updater
         this.state = produce(this.state, updater);
         this.updateNode();
     }
@@ -29,11 +30,21 @@ export class Component<T extends JSONValue = Record<string, JSONValue>> {
         if (!oldNode) {
             throw new Error('updateNode: node not found');
         }
-        const component = this as any;
-        const newNode = component.render(oldNode.props);
+        // const component = this as any; // Removed 'as any'
+        const newNode = this.render(oldNode.props); // Used 'this' directly
         console.log('newNode', newNode);
+        if (!newNode) { // Added check for newNode, as render can return undefined/null
+            // TODO: Handle cases where render returns no node.
+            // This might mean unmounting the component or leaving the old node.
+            // For now, we'll throw an error or log, as replacing with null is problematic.
+            console.error('Component render returned no node. Old node:', oldNode);
+            // Or perhaps, if the intention is to remove the component, handle that explicitly.
+            // This part of the logic needs clarification based on framework design.
+            // For now, let's not modify the DOM if newNode is null/undefined.
+            return; 
+        }
         newNode.props = { ...oldNode.props, ...newNode.props };
-        newNode.component = component;
+        newNode.component = this; // Used 'this' directly
         // traverse node tree
         function recursive(_newNode: NodeItem, _oldNode: NodeItem) {
             // 替换节点实例

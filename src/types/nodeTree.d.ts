@@ -3,18 +3,12 @@ import { Component } from "../component";
 export type NodeItem = {
     tag: string;
     text?: string;
-    component?: Component;
-    attributes: {
-        [key: string]: any;
-    };
-    __eventHandlers?: {
-        [key: string]: any;
-    };
+    component?: Component<any>; // Making component's state type explicit as any for now
+    attributes: Record<string, string | number | boolean | undefined | Record<string, string | number>>; // Allow style object
+    __eventHandlers?: Record<string, EventListener>;
     children: NodeItem[];
     element?: NodeElement;
-    props?: {
-        [key: string]: any;
-    };
+    props?: Record<string, unknown>;
     parent?: NodeItem;
 };
 
