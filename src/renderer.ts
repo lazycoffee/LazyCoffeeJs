@@ -10,11 +10,14 @@ type ComponentClass = new (props?: Record<string, unknown>) => Component<any>;
 // Type for what can be rendered: a Component class or a NodeItem tree
 type RenderableInput = ComponentClass | NodeItem;
 
-export function render(node: RenderableInput, domTarget: string | HTMLElement | null) {
+export function render(
+    node: RenderableInput,
+    domTarget: string | HTMLElement | null
+) {
     let jsxNode: NodeItem;
     if (isClass(node)) {
         // node is ComponentClass here
-        jsxNode = createNodeByClass(node as ComponentClass, null); // Pass props as null
+        jsxNode = createNodeByClass(node as ComponentClass, {});
     } else {
         // node is NodeItem here
         jsxNode = node as NodeItem;
@@ -34,7 +37,9 @@ export function mount(jsxNode: NodeItem, domTarget: string | HTMLElement) {
     }
 
     if (!mountPoint) {
-        throw new Error(`Mount point not found for selector/element: ${domTarget}`);
+        throw new Error(
+            `Mount point not found for selector/element: ${domTarget}`
+        );
     }
 
     console.log('jsxNode: ', jsxNode);
