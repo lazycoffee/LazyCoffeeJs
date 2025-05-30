@@ -2,7 +2,7 @@
   "lockfileVersion": 1,
   "workspaces": {
     "": {
-      "name": "lc_ood_framework",
+      "name": "lazy-coffee-js",
       "dependencies": {
         "immer": "^10.1.1",
         "uuid": "^11.1.0",
