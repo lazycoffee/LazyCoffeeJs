@@ -5,6 +5,9 @@ import { expect, test, describe, beforeEach, mock } from "bun:test";
 class MinimalMockNode {
     nodeType: number;
     childNodes: MinimalMockNode[] = [];
+    static ELEMENT_NODE = 1;
+    static TEXT_NODE = 3;
+    static DOCUMENT_FRAGMENT_NODE = 11;
     ownerDocument: any = null;
     parentElement: MinimalMockElement | null = null;
     appendChild: ReturnType<typeof mock>;
@@ -96,8 +99,8 @@ const mockedDocument = {
 (globalThis as any).document = mockedDocument;
 
 // Step 3: Import the module under test
-import { createElement, createElementTree, removeNodeElement } from './element';
-import { NodeItem, NodeElement } from './types/nodeTree';
+import { createElement, createElementTree, removeNodeElement } from '../src/element';
+import { NodeItem, NodeElement } from '../src/types/nodeTree';
 
 describe('createElement(node: NodeItem)', () => {
     beforeEach(() => {
@@ -167,7 +170,12 @@ describe('createElement(node: NodeItem)', () => {
     test('should set input checked attribute from props if value is true', () => {
         const node: NodeItem = { tag: 'input', props: { type: 'checkbox', checked: true } };
         const element = createElement(node) as MinimalMockHTMLElement;
-        expect(element.setAttribute).toHaveBeenCalledWith('checked', '');
+        // Check that setAttribute was called for 'checked'.
+        // It might be called for 'type' as well, so we find the specific call.
+        const checkedCall = (element.setAttribute as ReturnType<typeof mock>).mock.calls.find(
+            (call) => call[0] === 'checked'
+        );
+        expect(checkedCall).toEqual(['checked', '']);
     });
 
     test('should set node-id attribute if node.component._id exists', () => {
@@ -205,7 +213,7 @@ describe('createElementTree(jsxNode: NodeItem)', () => {
         expect(parentElement.appendChild).toHaveBeenCalledTimes(1); // Child appended to parent
         const childElement = (parentElement.appendChild as ReturnType<typeof mock>).mock.calls[0][0];
         expect(childElement.tagName).toBe('SPAN');
-        expect(node.element).toBe(parentElement); // Check if parentNode.element is set
+        expect(parentNode.element).toBe(parentElement); // Check if parentNode.element is set
         expect(childNode.element).toBe(childElement); // Check if childNode.element is set
         expect(childNode.parent).toBe(parentNode);
     });
