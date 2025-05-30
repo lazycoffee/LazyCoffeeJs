@@ -35,7 +35,7 @@ export function cssValue(value: unknown): string { // value: any -> unknown
     if (!value) {
         return "''";
     }
-    return value;
+    return value as string;
 }
 export function cssKey(key: string): string {
     return key.replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`);

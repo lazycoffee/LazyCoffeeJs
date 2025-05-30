@@ -6,9 +6,9 @@ import { createElement, createElementTree, removeNodeElement } from './element';
 import { replaceNode, updateDomAttributes } from './lib/nodeUpdater';
 import { NodeItem } from './types/nodeTree';
 
-export class Component<T extends Record<string, JSONValue> = Record<string, JSONValue>> { // Changed constraint to Record<string, JSONValue> if JSONValue is primitive | array
+export class Component<T extends Record<string, JSONValue> = Record<string, JSONValue>> {
     constructor() {}
-    render(props: Record<string, unknown>): NodeItem | undefined | null { // Changed props type
+    render(props: Record<string, JSONValue>): NodeItem | undefined | null {
         return;
     }
     state: T = {} as T;
@@ -31,7 +31,7 @@ export class Component<T extends Record<string, JSONValue> = Record<string, JSON
             throw new Error('updateNode: node not found');
         }
         // const component = this as any; // Removed 'as any'
-        const newNode = this.render(oldNode.props); // Used 'this' directly
+        const newNode = this.render(oldNode.props as Record<string, JSONValue>); // Used 'this' directly
         console.log('newNode', newNode);
         if (!newNode) { // Added check for newNode, as render can return undefined/null
             // TODO: Handle cases where render returns no node.

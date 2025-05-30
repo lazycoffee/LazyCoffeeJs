@@ -1,4 +1,5 @@
 import { createElement } from '../element';
+import { cssKey } from './helper';
 import { NodeItem } from '../types/nodeTree';
 import { cssValue, isEventKey, isFragment, isFunction, isText } from './helper';
 
@@ -25,19 +26,21 @@ export function updateDomAttributes(newNode: NodeItem, oldNode: NodeItem) {
 
         if (isEventKey(key) && isFunction(value)) {
             const eventType = key.toLowerCase().substring(2);
-            const newCallback = value as EventListener; // Cast to EventListener
-            if (oldNode.__eventHandlers && oldNode.__eventHandlers[eventType]) {
-                element.removeEventListener(
-                    eventType,
-                    oldNode.__eventHandlers[eventType]
-                );
-                // It's good practice to also remove from the tracking object if the listener is removed
-                // delete oldNode.__eventHandlers[eventType]; // This was here, but __eventHandlers belongs to newNode for new state
-            }
-            element.addEventListener(eventType, newCallback);
-            // Update __eventHandlers on the newNode as it reflects the current state
-            if (!newNode.__eventHandlers) newNode.__eventHandlers = {};
-            newNode.__eventHandlers[eventType] = newCallback;
+            // 检查 value 是否为有效的 EventListener 类型
+if (typeof value === 'function') {
+    const newCallback = (value as unknown) as (evt: Event) => void;
+    if (oldNode.__eventHandlers && oldNode.__eventHandlers[eventType]) {
+        element.removeEventListener(
+            eventType,
+            oldNode.__eventHandlers[eventType]
+        );
+    }
+    element.addEventListener(eventType, newCallback);
+    if (!newNode.__eventHandlers) newNode.__eventHandlers = {};
+    newNode.__eventHandlers[eventType] = newCallback;
+} else {
+    console.error(`事件处理程序 ${key} 不是有效的函数类型`);
+}
             return;
         }
         if (key === 'style') {

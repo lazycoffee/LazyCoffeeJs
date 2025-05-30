@@ -116,7 +116,7 @@ export function createElementTree(jsxNode: NodeItem): NodeElement | undefined { 
 export function removeNodeElement(element: NodeElement) {
     if (isFragment(element)) {
         // Iterate over a shallow copy of childNodes because child.remove() might modify the original array
-        [...element.childNodes].forEach((child) => {
+        Array.from(element.childNodes).forEach((child) => {
             removeNodeElement(child as NodeElement);
         });
         return;
