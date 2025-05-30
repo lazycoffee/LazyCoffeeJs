@@ -6,7 +6,9 @@ import { createElement, createElementTree, removeNodeElement } from './element';
 import { replaceNode, updateDomAttributes } from './lib/nodeUpdater';
 import { NodeItem } from './types/nodeTree';
 
-export class Component<T extends Record<string, JSONValue> = Record<string, JSONValue>> {
+export class Component<
+    T extends Record<string, JSONValue> = Record<string, JSONValue>
+> {
     constructor() {}
     render(props: Record<string, JSONValue>): NodeItem | undefined | null {
         return;
@@ -14,34 +16,26 @@ export class Component<T extends Record<string, JSONValue> = Record<string, JSON
     state: T = {} as T;
     readonly _id: string = uuid();
     setState(nextState: Partial<T>) {
-        this.state = produce(this.state, (draft: T) => { // Changed draft type
+        this.state = produce(this.state, (draft: T) => {
+            // Changed draft type
             Object.assign(draft, nextState);
         });
         this.updateNode();
     }
-    updateState(updater: (draft: T) => void) { // Changed return type of updater
+    updateState(updater: (draft: T) => void) {
+        // Changed return type of updater
         this.state = produce(this.state, updater);
         this.updateNode();
     }
     updateNode() {
         const oldNode = getNodeById(this._id);
-        console.log('state', this.state);
-        console.log('updateNode', oldNode);
         if (!oldNode) {
             throw new Error('updateNode: node not found');
         }
         // const component = this as any; // Removed 'as any'
-        const newNode = this.render(oldNode.props as Record<string, JSONValue>); // Used 'this' directly
-        console.log('newNode', newNode);
-        if (!newNode) { // Added check for newNode, as render can return undefined/null
-            // TODO: Handle cases where render returns no node.
-            // This might mean unmounting the component or leaving the old node.
-            // For now, we'll throw an error or log, as replacing with null is problematic.
-            console.error('Component render returned no node. Old node:', oldNode);
-            // Or perhaps, if the intention is to remove the component, handle that explicitly.
-            // This part of the logic needs clarification based on framework design.
-            // For now, let's not modify the DOM if newNode is null/undefined.
-            return; 
+        const newNode = this.render(oldNode.props as Record<string, JSONValue>);
+        if (!newNode) {
+            return;
         }
         newNode.props = { ...oldNode.props, ...newNode.props };
         newNode.component = this; // Used 'this' directly

@@ -41,11 +41,8 @@ export function mount(jsxNode: NodeItem, domTarget: string | HTMLElement) {
             `Mount point not found for selector/element: ${domTarget}`
         );
     }
-
-    console.log('jsxNode: ', jsxNode);
     cacheNodeTree(jsxNode); // Assuming jsxNode is the root of the new tree
-    const elementTree = createElementTree(jsxNode); // Returns NodeElement | undefined
-    console.log('elementTree: ', elementTree);
+    const elementTree = createElementTree(jsxNode);
 
     if (elementTree) {
         // Clear existing content before appending new tree

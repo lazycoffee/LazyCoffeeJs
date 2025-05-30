@@ -75,8 +75,7 @@ export function createElement(node: NodeItem): NodeElement {
     });
     return htmlElement;
 }
-export function createElementTree(jsxNode: NodeItem): NodeElement | undefined { // Changed return type
-    console.log('createElementTree: ', jsxNode);
+export function createElementTree(jsxNode: NodeItem): NodeElement | undefined { 
     if (!jsxNode) { // Added check for initial jsxNode
         throw new Error('create element failed. invalid node');
     }

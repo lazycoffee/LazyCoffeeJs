@@ -32,7 +32,6 @@ export function getNodeById(id: string): NodeItem | undefined {
     return result;
 }
 export function queryNodeList(selector: string): NodeItem[] {
-    console.log('node tree: ', nodeTree);
     if (!document || typeof document.querySelectorAll !== 'function') { // Guard against undefined document
         return [];
     }
