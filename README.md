@@ -64,7 +64,7 @@ This framework draws heavily on the design philosophies of React and Vue. Here a
 
 ### Modify Component State Variables Anywhere
 
-Although, like React and Vue, state variables in this framework are passed down from top to bottom, you do not need to declare state variables in the upper layer to control lower-level components when modifying state variables. All components are independent, just like native DOM elements. You only need to find the element and then modify it. For example, if you create a dialog component and want to show a dialog to the user, you just need to find the component instance and call its dialog method:
+Although, like React and Vue, state variables in this framework are passed down from top to bottom. But this framewrok is different, you do not need to declare state variables in the upper layer to control lower-level components when modifying state variables. All components are independent, just like native DOM elements. You only need to find the element and then modify it. For example, if you create a dialog component and want to show a dialog to the user, you just need to find the component instance and call its dialog method:
 
 ```tsx
 import { queryOne } from 'lc_ood_framework'; // Corrected: querOne to queryOne
@@ -77,7 +77,7 @@ function submit() {
 }
 ```
 
-In the dialog component, all state variables are encapsulated within the class and do not need to be passed in from elsewhere:
+For example, in the dialog component, all state variables are encapsulated within the class and do not need to be passed in from elsewhere:
 
 ```tsx
 import { Component } from 'lc_ood_framework';
