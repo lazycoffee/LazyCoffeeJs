@@ -1,9 +1,9 @@
 import { expect, test, describe, beforeEach, mock } from "bun:test";
-import { Component } from './component';
-import { getNodeById } from './nodeTree';
-import { createElement, createElementTree, removeNodeElement } from './element';
-import { replaceNode, updateDomAttributes } from './lib/nodeUpdater';
-import { NodeItem } from "./types/nodeTree";
+import { Component } from '../src/component';
+import { getNodeById } from '../src/nodeTree';
+import { createElement, createElementTree, removeNodeElement } from '../src/element';
+import { replaceNode, updateDomAttributes } from '../src/lib/nodeUpdater';
+import { NodeItem } from "../src/types/nodeTree";
 
 // Mock dependencies
 const mockGetNodeById = mock(() => {});
@@ -13,15 +13,15 @@ const mockRemoveNodeElement = mock(() => {});
 const mockReplaceNode = mock(() => {});
 const mockUpdateDomAttributes = mock(() => {});
 
-mock.module('./nodeTree', () => ({
+mock.module('../src/nodeTree', () => ({
   getNodeById: mockGetNodeById,
 }));
-mock.module('./element', () => ({
+mock.module('../src/element', () => ({
   createElement: mockCreateElement,
   createElementTree: mockCreateElementTree,
   removeNodeElement: mockRemoveNodeElement,
 }));
-mock.module('./lib/nodeUpdater', () => ({
+mock.module('../src/lib/nodeUpdater', () => ({
   replaceNode: mockReplaceNode,
   updateDomAttributes: mockUpdateDomAttributes,
 }));

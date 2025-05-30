@@ -50,7 +50,7 @@ export function createElement(node: NodeItem): NodeElement {
             });
             return;
         }
-        if (htmlElement.tagName === 'input' && key === 'checked') {
+        if (htmlElement.tagName.toUpperCase() === 'INPUT' && key === 'checked') {
             if (attrValue) { // attrValue can be true/false or string "true"/"false"
                 htmlElement.setAttribute(key, '');
             } else {
@@ -77,14 +77,14 @@ export function createElement(node: NodeItem): NodeElement {
 }
 export function createElementTree(jsxNode: NodeItem): NodeElement | undefined { // Changed return type
     console.log('createElementTree: ', jsxNode);
+    if (!jsxNode) { // Added check for initial jsxNode
+        throw new Error('create element failed. invalid node');
+    }
     function recursive(nextNode: NodeItem, parentNode: NodeItem | null): NodeElement | undefined { // Added return type for recursive
-        if (!nextNode) {
-            // This case should ideally not be reached if called correctly,
-            // but if it is, returning undefined is safer than throwing.
-            // Consider if an error should be thrown for an invalid tree structure.
-            console.error("recursive called with invalid nextNode", nextNode);
-            return undefined; 
-        }
+        // Note: nextNode here will not be null due to the initial check in createElementTree 
+        // and the assumption that children arrays don't contain null/undefined items.
+        // If children arrays *can* contain falsy values, a check here would be needed.
+
         // 'string' type check for nextNode is not present in NodeItem type, assuming NodeItem always.
         if (nextNode.tag && parentNode) { // Simplified: typeof nextNode !== 'string' removed as NodeItem is object
             nextNode.parent = parentNode;
@@ -115,7 +115,8 @@ export function createElementTree(jsxNode: NodeItem): NodeElement | undefined { 
 }
 export function removeNodeElement(element: NodeElement) {
     if (isFragment(element)) {
-        element.childNodes.forEach((child) => {
+        // Iterate over a shallow copy of childNodes because child.remove() might modify the original array
+        [...element.childNodes].forEach((child) => {
             removeNodeElement(child as NodeElement);
         });
         return;
