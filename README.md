@@ -11,7 +11,7 @@ The current version is a beta version and may contain bugs. Please do not use it
 ### Installation
 
 ```bash
-npm install lc_ood_framework
+npm install lazy-coffee-js
 ```
 
 ### TypeScript Configuration
@@ -22,7 +22,7 @@ If you need to use TypeScript, you need to add the following configuration to yo
 {
     "compilerOptions": {
         "jsx": "react-jsx",
-        "jsxImportSource": "lc_ood_framework"
+        "jsxImportSource": "lazy-coffee-js"
         // Other configurations...
     }
 }
@@ -37,7 +37,7 @@ Currently, only RollDown configuration has been tested. Other build tools have n
 {
     "jsx": {
         "mode": "automatic",
-        "jsxImportSource": "lc_ood_framework"
+        "jsxImportSource": "lazy-coffee-js"
     }
     // Other configurations...
 }
@@ -48,7 +48,7 @@ Currently, only RollDown configuration has been tested. Other build tools have n
 Usage is no different from current popular frameworks:
 
 ```tsx
-import { Component } from 'lc_ood_framework';
+import { Component } from 'lazy-coffee-js';
 class App extends Component {
     render() {
         return <div>Hello World</div>;
@@ -67,7 +67,7 @@ This framework draws heavily on the design philosophies of React and Vue. Here a
 Although, like React and Vue, state variables in this framework are passed down from top to bottom. But this framewrok is different, you do not need to declare state variables in the upper layer to control lower-level components when modifying state variables. All components are independent, just like native DOM elements. You only need to find the element and then modify it. For example, if you create a dialog component and want to show a dialog to the user, you just need to find the component instance and call its dialog method:
 
 ```tsx
-import { queryOne } from 'lc_ood_framework'; // Corrected: querOne to queryOne
+import { queryOne } from 'lazy-coffee-js'; // Corrected: querOne to queryOne
 
 function submit() {
     const confirmModal = queryOne('#confirm-modal');
@@ -80,7 +80,7 @@ function submit() {
 For example, in the dialog component, all state variables are encapsulated within the class and do not need to be passed in from elsewhere:
 
 ```tsx
-import { Component } from 'lc_ood_framework';
+import { Component } from 'lazy-coffee-js';
 
 class ConfirmModal extends Component {
     state = {
@@ -111,7 +111,7 @@ class ConfirmModal extends Component {
 With the help of Immer, you don't need to worry about the mutability of state variables. You can just modify them directly, and it will trigger changes in the DOM elements.
 
 ```tsx
-import { Component } from 'lc_ood_framework';
+import { Component } from 'lazy-coffee-js';
 class App extends Component {
     constructor() {
         super();
