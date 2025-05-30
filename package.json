@@ -4,7 +4,7 @@
     "description": "A framework for Object-Oriented Design (OOD) in JavaScript.",
     "scripts": {
         "dev": "rolldown -c build/dev.config.ts --watch",
-        "test": "bun test"
+        "all-test": "tsc --noEmit && bun test"
     },
     "main": "src/index.ts",
     "exports": {
