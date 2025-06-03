@@ -2,7 +2,10 @@ import { describe, expect, it } from 'bun:test';
 import { Component } from '../src/component';
 import { jsx, JsxItem, jsxs } from '../src/jsx-runtime';
 import { NodeItem } from '@/types/nodeTree';
-import { JSONValue } from '@/types/type';
+import { createElementTree } from '@/element';
+import { init } from './lib/common';
+
+init();
 
 type ListItem = {
     id: number;
@@ -18,7 +21,7 @@ type State = {
 
 describe('Component', () => {
     class App extends Component<State> {
-        public state = {
+        state = {
             list: [
                 {
                     id: 1,
@@ -95,5 +98,32 @@ describe('Component', () => {
     const appInstance = new App();
     it('should have a state property', () => {
         expect(appInstance.state.list).toBeDefined();
+    });
+    const nodeTree = appInstance.render() as NodeItem;
+    const element = createElementTree(nodeTree) as HTMLElement;
+    it('should render a list of items', () => {
+        expect(element).toBeDefined();
+        if (!element) {
+            return;
+        }
+        // verify root element
+        expect(element.tagName.toUpperCase()).toBe('DIV');
+        expect(element.getAttribute('id')).toBe('list');
+        const ul = element.firstChild as HTMLElement;
+        expect(ul.tagName.toUpperCase()).toBe('UL');
+        // verify first item
+        const li = ul.firstChild as HTMLElement;
+        expect(li.tagName.toUpperCase()).toBe('LI');
+        const span = li.firstChild as HTMLElement;
+        expect(span.tagName.toUpperCase()).toBe('SPAN');
+        expect(span.textContent).toBe('张三');
+        // verify sub children
+        const subChild = li.children[2] as HTMLElement;
+        expect(subChild.tagName.toUpperCase()).toBe('UL');
+        const subChildLi = subChild.firstChild as HTMLElement;
+        expect(subChildLi.tagName.toUpperCase()).toBe('LI');
+        const subChildSpan = subChildLi.firstChild as HTMLElement;
+        expect(subChildSpan.tagName.toUpperCase()).toBe('SPAN');
+        expect(subChildSpan.textContent).toBe('张三儿1');
     });
 });
