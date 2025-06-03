@@ -1,40 +1,32 @@
 import { Component } from './component';
 import { isClass } from './lib/helper';
-import { Props } from './types/component';
-import { NodeItem } from './types/nodeTree';
-import { JSONValue } from './types/type';
+import { NodeItem, Props } from './types/nodeTree';
+import { JSONType, JSONValue } from './types/type';
 
-// Type Definitions for JSX processing
-type ComponentConstructor = new (
-    props?: Record<string, unknown>
-) => Component<any>;
-type FunctionalComponent = (
-    props?: Record<string, unknown>
-) => NodeItem | null | undefined;
+export type ComponentConstructor = new (props?: JSONType) => Component<any>;
+type FunctionalComponent = (props?: JSONType) => NodeItem | null | undefined;
 type JsxTag = string | ComponentConstructor | FunctionalComponent;
 
 type JsxChild = NodeItem | string;
+export type JsxItem = NodeItem | undefined | null;
 
-export function jsx(tag: JsxTag, props: Props): NodeItem | null | undefined {
+export function jsx(tag: JsxTag, props: Props): JsxItem {
     if (isClass(tag)) {
         // tag is ComponentConstructor
-        return createNodeByClass(tag as ComponentConstructor, props);
+        return createNodeByClass(tag as ComponentConstructor, props as Props);
     } else if (typeof tag === 'string') {
         // tag is html tag string
         return createNode(tag, props);
     } else if (typeof tag === 'function') {
         // tag is FunctionalComponent
-        return (tag as FunctionalComponent)(props);
+        return (tag as FunctionalComponent)(props as JSONType);
     } else {
         // console.error('jsx: invalid tag argument', tag);
         throw new Error('jsx: invalid arguments for tag');
     }
 }
 
-export function jsxs(
-    tag: JsxTag | { name?: string },
-    props: Props
-): NodeItem | null | undefined {
+export function jsxs(tag: JsxTag | { name?: string }, props: Props): JsxItem {
     // Special handling for Fragment, often represented as a function or a special symbol/object
     if (typeof tag === 'function' && tag.name === 'Fragment') {
         // Assuming Fragment is a function component
@@ -61,22 +53,17 @@ export function jsxs(
 
 function createNode(tag: JsxTag, props: Props): NodeItem {
     let tagName: string;
-    let attributes: Record<string, unknown> = { ...props }; // Copy props to attributes
+    let attributes: any;
+    if (typeof props === 'object') {
+        attributes = { ...props };
+    }
     let componentInstance: Component<any> | undefined = undefined;
 
     if (typeof tag === 'string') {
         tagName = tag;
     } else if (isClass(tag)) {
-        // This case should ideally be handled by createNodeByClass if it involves instantiation.
-        // If createNode is called directly with a class, it means we might just use its name as a tag,
-        // which is unusual for component-based frameworks unless it's for custom elements.
-        // The original code had `tagName = tag.name;`
-        // For now, let's assume if it's a class, it should have been handled by createNodeByClass.
-        // This path in createNode for a class tag is ambiguous.
-        // Sticking to original logic:
-        tagName = (tag as ComponentConstructor).name; // Or a custom resolver for class to tag name
+        tagName = (tag as ComponentConstructor).name;
     } else if (typeof tag === 'function') {
-        // Functional component, use its name as tag (convention) or handle differently
         tagName =
             (tag as FunctionalComponent).name || 'UnknownFunctionComponent';
     } else {
@@ -86,7 +73,7 @@ function createNode(tag: JsxTag, props: Props): NodeItem {
     let childrenNodes: NodeItem[] = [];
     if (attributes && attributes.children) {
         const currentChildren = attributes.children;
-        delete attributes.children; // Remove children from attributes object
+        delete attributes.children;
 
         const processChild = (child: JsxChild): NodeItem => {
             if (typeof child === 'string') {
@@ -106,35 +93,24 @@ function createNode(tag: JsxTag, props: Props): NodeItem {
             childrenNodes = [processChild(currentChildren as JsxChild)];
         }
     }
-
-    // The attributes passed to NodeItem should not contain children.
-    // Props for the component (if any) might be different from HTML attributes.
-    // For now, all remaining props are passed as attributes.
+    const _props: any = Object.assign({}, props);
     const node: NodeItem = {
         tag: tagName,
-        attributes: attributes as Record<
-            string,
-            | string
-            | number
-            | boolean
-            | undefined
-            | Record<string, string | number>
-        >, // Cast after children removal
+        attributes: attributes,
         children: childrenNodes,
-        props: { ...props }, // Store original props separately if needed
-        component: componentInstance, // This would be set if createNode handled class instantiation
+        props: _props,
+        component: componentInstance,
     };
     return node;
 }
 
 export function Fragment(): null {
-    // Fragment component itself doesn't render, its children are hoisted.
-    return null; // The actual processing is in jsxs/jsx
+    return null;
 }
 
 export function createNodeByClass(
     ClassConstructor: ComponentConstructor,
-    props: Record<string, JSONValue> = {}
+    props: { [key: string]: any } = {}
 ): NodeItem {
     const componentInstance = new ClassConstructor(props);
     const renderedNode = componentInstance.render(props);
@@ -150,7 +126,9 @@ export function createNodeByClass(
     }
 
     renderedNode.component = componentInstance;
-    renderedNode.props = { ...(renderedNode.props || {}), ...(props || {}) }; // Merge props
+    const _props = Object.assign({}, props);
+    Object.assign(renderedNode.props || {}, _props);
+    renderedNode.props = _props;
 
     return renderedNode;
 }

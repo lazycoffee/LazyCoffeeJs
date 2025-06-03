@@ -1,7 +1,7 @@
 import { produce } from 'immer';
 import { getNodeById } from './nodeTree';
 import { removeitemInArray, uuid } from './lib/helper';
-import { JSONValue } from './types/type'; // Added import
+import { JSONType, JSONValue } from './types/type'; // Added import
 import { createElement, createElementTree, removeNodeElement } from './element';
 import { replaceNode, updateDomAttributes } from './lib/nodeUpdater';
 import { NodeItem } from './types/nodeTree';
@@ -10,7 +10,7 @@ export class Component<
     T extends Record<string, JSONValue> = Record<string, JSONValue>
 > {
     constructor() {}
-    render(props: Record<string, JSONValue>): NodeItem | undefined | null {
+    render(props: JSONType): NodeItem | undefined | null {
         return;
     }
     state: T = {} as T;
@@ -32,12 +32,11 @@ export class Component<
         if (!oldNode) {
             throw new Error('updateNode: node not found');
         }
-        // const component = this as any; // Removed 'as any'
-        const newNode = this.render(oldNode.props as Record<string, JSONValue>);
+        const newNode = this.render(oldNode.props || {});
         if (!newNode) {
             return;
         }
-        newNode.props = { ...oldNode.props, ...newNode.props };
+        newNode.props = Object.assign(oldNode.props || {}, newNode.props);
         newNode.component = this; // Used 'this' directly
         // traverse node tree
         function recursive(_newNode: NodeItem, _oldNode: NodeItem) {

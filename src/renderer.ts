@@ -1,6 +1,6 @@
 import { createElementTree } from './element';
 import { isClass } from './lib/helper';
-import { createNodeByClass } from './jsx-runtime'; // Assumes createNodeByClass returns NodeItem
+import { ComponentConstructor, createNodeByClass } from './jsx-runtime'; // Assumes createNodeByClass returns NodeItem
 import { cacheNodeTree } from './nodeTree';
 import { NodeItem, NodeElement } from './types/nodeTree';
 import { Component } from './component'; // For type definition
@@ -17,7 +17,7 @@ export function render(
     let jsxNode: NodeItem;
     if (isClass(node)) {
         // node is ComponentClass here
-        jsxNode = createNodeByClass(node as ComponentClass, {});
+        jsxNode = createNodeByClass(node as ComponentConstructor, {});
     } else {
         // node is NodeItem here
         jsxNode = node as NodeItem;

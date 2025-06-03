@@ -18,7 +18,7 @@ export function createElement(node: NodeItem): NodeElement {
     // set attributes
     const attributes = node.attributes;
     const props = node.props;
-    const combinedAttr = { ...props, ...attributes };
+    const combinedAttr = Object.assign(attributes, props);
     if (node.component?._id) combinedAttr['node-id'] = node.component._id;
     if (!isHTMLElement(element)) {
         return element;
