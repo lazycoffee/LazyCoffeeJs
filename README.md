@@ -1,6 +1,6 @@
 # LazyCoffee Object Oriented Development Framework
 
-A simple, easy-to-use, object-oriented web development framework with no learning curve.
+A simple, easy-to-use, object-oriented web development framework with no learning curve, perfect for AI-assisted development.
 
 ## Beta
 
