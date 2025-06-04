@@ -1,7 +1,8 @@
 import { createElement } from '../element';
-import { cssKey } from './helper';
+import { cssKey, cssTextToObject } from './helper';
 import { NodeItem } from '../types/nodeTree';
 import { cssValue, isEventKey, isFragment, isFunction, isText } from './helper';
+import { current } from 'immer';
 
 export function updateDomAttributes(newNode: NodeItem, oldNode: NodeItem) {
     // 合并属性更新逻辑
@@ -15,13 +16,16 @@ export function updateDomAttributes(newNode: NodeItem, oldNode: NodeItem) {
     if (newNode.component?._id) {
         element.setAttribute('node-id', newNode.component._id);
     }
-    const attributes = { ...oldNode.attributes, ...newNode.attributes };
-    Object.keys(attributes).forEach((key) => {
-        if (!Object.prototype.hasOwnProperty.call(newNode.attributes, key)) {
+    const attributes = element.attributes || [];
+    const newAttributes = newNode.attributes || {};
+    const newKeys = Object.keys(newAttributes);
+    Array.from(attributes).forEach((attr) => {
+        const key = attr.name;
+        const value = attr.value;
+        if (!newKeys.includes(key)) {
             element.removeAttribute(key);
             return;
         }
-        const value = attributes[key]; // string | number | boolean | undefined | Record<string, string | number>
 
         if (isEventKey(key) && isFunction(value)) {
             const eventType = key.toLowerCase().substring(2);
@@ -46,38 +50,24 @@ export function updateDomAttributes(newNode: NodeItem, oldNode: NodeItem) {
             return;
         }
         if (key === 'style') {
-            const newStyle = newNode.attributes[key] as
+            const newStyle = newAttributes[key] as
                 | Record<string, string | number>
                 | undefined;
-            const oldStyle = oldNode.attributes[key] as
-                | Record<string, string | number>
-                | undefined;
-
-            if (typeof newStyle === 'object' && newStyle !== null) {
-                const newStyleKeys = Object.keys(newStyle);
-                // Remove styles that are in oldStyle but not in newStyle
-                if (typeof oldStyle === 'object' && oldStyle !== null) {
-                    Object.keys(oldStyle).forEach((styleKey) => {
-                        if (!newStyle.hasOwnProperty(styleKey)) {
-                            element.style.removeProperty(cssKey(styleKey)); // cssKey for safety
-                        }
-                    });
+            let currentStyle = cssTextToObject(
+                element.getAttribute('style') || ''
+            );
+            Object.keys(currentStyle).forEach((styleKey) => {
+                if (!newStyle || !newStyle.hasOwnProperty(styleKey)) {
+                    element.style.removeProperty(cssKey(styleKey)); // cssKey for safety
                 }
-                // Apply new/updated styles
-                newStyleKeys.forEach((styleKey) => {
-                    const styleValue = cssValue(String(newStyle[styleKey])); // Ensure string
-                    element.style.setProperty(cssKey(styleKey), styleValue); // cssKey for safety
-                });
-            } else if (typeof oldStyle === 'object' && oldStyle !== null) {
-                // New style is not an object (or null/undefined), so remove all old styles
-                Object.keys(oldStyle).forEach((styleKey) => {
-                    element.style.removeProperty(cssKey(styleKey));
+            });
+            if (newStyle && typeof newStyle === 'object') {
+                Object.entries(newStyle).forEach(([styleKey, value]) => {
+                    element.style.setProperty(cssKey(styleKey), cssValue(value));
                 });
             }
-            // If newStyle is not an object and oldStyle is also not an object, do nothing for style.
             return;
         }
-        // Default: set attribute if it's a primitive type
         if (
             typeof value === 'string' ||
             typeof value === 'number' ||
@@ -85,8 +75,6 @@ export function updateDomAttributes(newNode: NodeItem, oldNode: NodeItem) {
         ) {
             element.setAttribute(key, String(value));
         }
-        // If value is undefined (because it was removed from newNode.attributes),
-        // it's handled by the initial check: element.removeAttribute(key);
     });
 }
 export function replaceNode(newNode: NodeItem, oldNode: NodeItem) {

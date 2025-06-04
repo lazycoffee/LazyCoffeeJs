@@ -54,10 +54,10 @@ function isClass(obj) {
 	return /^class\s/.test(Function.prototype.toString.call(obj));
 }
 function isFragment(element) {
-	return element.nodeType === Node.DOCUMENT_FRAGMENT_NODE;
+	return !!element && element.nodeType === Node.DOCUMENT_FRAGMENT_NODE;
 }
 function isText(element) {
-	return element.nodeType === Node.TEXT_NODE;
+	return !!element && element.nodeType === Node.TEXT_NODE;
 }
 function isHTMLElement(element) {
 	return element instanceof HTMLElement;
@@ -74,6 +74,16 @@ function cssKey(key) {
 function isEventKey(key) {
 	return /^on[A-Z]/.test(key);
 }
+function cssTextToObject(cssText) {
+	const styleObject = {};
+	const styleRules = cssText.split(";");
+	styleRules.forEach((rule) => {
+		let [key, value] = rule.split(":").map((s) => s.trim());
+		key = key?.replace(/-([a-z])/g, (match, p1) => p1.toUpperCase());
+		if (key && value) styleObject[key] = value;
+	});
+	return styleObject;
+}
 function removeitemInArray(arr, item) {
 	const index = arr.indexOf(item);
 	if (index > -1) arr.splice(index, 1);
@@ -81,56 +91,71 @@ function removeitemInArray(arr, item) {
 
 //#endregion
 //#region src/jsx-runtime.ts
-function jsx(arg1, arg2) {
-	if (isClass(arg1)) return createNodeByClass(arg1, arg2);
-	else if (typeof arg1 === "string") return createNode(arg1, arg2);
-	else if (arg1 instanceof Function) return arg1(arg2);
-	else throw new Error("jsx: invalid arguments");
+function jsx(tag, props) {
+	if (isClass(tag)) return createNodeByClass(tag, props);
+	else if (typeof tag === "string") return createNode(tag, props);
+	else if (typeof tag === "function") return tag(props);
+	else throw new Error("jsx: invalid arguments for tag");
 }
-function jsxs(arg1, arg2) {
-	if (arg1.name === "Fragment") return createNode("fragment", arg2);
-	return createNode(arg1, arg2);
+function jsxs(tag, props) {
+	if (typeof tag === "function" && tag.name === "Fragment") return createNode("fragment", props);
+	if (typeof tag === "object" && tag.name === "Fragment") return createNode("fragment", props);
+	if (typeof tag === "string" || isClass(tag) || typeof tag === "function") return createNode(tag, props);
+	else throw new Error("jsxs: invalid arguments for tag");
 }
-function createNode(tag, attributes) {
-	let tagName = tag;
-	if (isClass(tag)) tagName = tag.name;
-	else if (typeof tag === "function") tagName = tag.name;
-	if (typeof attributes.children === "string") attributes.children = [{
-		tag: "text",
-		text: attributes.children
-	}];
-	let children = attributes.children || [];
-	delete attributes.children;
-	if (children.tag) children = [children];
-	else if (Array.isArray(children)) children = children.map((child) => {
-		if (typeof child === "string") return {
-			tag: "text",
-			text: child
+function createNode(tag, props) {
+	let tagName;
+	let attributes;
+	if (typeof props === "object") attributes = { ...props };
+	let componentInstance = void 0;
+	if (typeof tag === "string") tagName = tag;
+	else if (isClass(tag)) tagName = tag.name;
+	else if (typeof tag === "function") tagName = tag.name || "UnknownFunctionComponent";
+	else throw new Error("createNode: invalid tag type");
+	let childrenNodes = [];
+	if (attributes && attributes.children) {
+		const currentChildren = attributes.children;
+		delete attributes.children;
+		const processChild = (child) => {
+			if (typeof child === "string") return {
+				tag: "text",
+				text: child,
+				attributes: {},
+				children: []
+			};
+			return child;
 		};
-		return child;
-	});
-	else {
-		console.log("children: ", children);
-		throw new Error("createNode: invalid children");
+		if (Array.isArray(currentChildren)) childrenNodes = currentChildren.map(processChild);
+		else childrenNodes = [processChild(currentChildren)];
 	}
+	const _props = Object.assign({}, props);
 	const node = {
 		tag: tagName,
 		attributes,
-		children
+		children: childrenNodes,
+		props: _props,
+		component: componentInstance
 	};
 	return node;
 }
-function Fragment() {}
-function createNodeByClass(anyClass, props) {
-	const instance = new anyClass();
-	const node = instance.render(props) || {
-		tag: "",
+function Fragment() {
+	return null;
+}
+function createNodeByClass(ClassConstructor, props = {}) {
+	const componentInstance = new ClassConstructor(props);
+	const renderedNode = componentInstance.render(props);
+	if (!renderedNode) return {
+		tag: "fragment",
 		attributes: {},
-		children: []
+		children: [],
+		component: componentInstance,
+		props: props || {}
 	};
-	node.props = props;
-	node.component = instance;
-	return node;
+	renderedNode.component = componentInstance;
+	const _props = Object.assign({}, props);
+	Object.assign(renderedNode.props || {}, _props);
+	renderedNode.props = _props;
+	return renderedNode;
 }
 
 //#endregion
@@ -682,6 +707,7 @@ function cacheNodeTree(tree) {
 	nodeTree = tree;
 }
 function traverseTree(tree, callback) {
+	if (!tree) return;
 	if (callback(tree)) return;
 	if (tree.children) if (Array.isArray(tree.children)) tree.children.forEach((child) => {
 		traverseTree(child, callback);
@@ -693,19 +719,23 @@ function getNodeById(id) {
 	traverseTree(nodeTree, (node) => {
 		if (node.component?._id === id) {
 			result = node;
-			return true;
+			return;
 		}
 	});
 	return result;
 }
 function queryNodeList(selector) {
-	console.log("node tree: ", nodeTree);
-	const elemtns = document.querySelectorAll(selector);
-	return Array.from(elemtns).map((element) => {
+	if (!document || typeof document.querySelectorAll !== "function") return [];
+	const elements = document.querySelectorAll(selector);
+	const results = [];
+	Array.from(elements).forEach((element) => {
 		const id = element.getAttribute("node-id");
-		if (!id) return;
-		return getNodeById(id);
-	}).filter((node) => !!node);
+		if (id) {
+			const node = getNodeById(id);
+			if (node) results.push(node);
+		}
+	});
+	return results;
 }
 function queryOneNode(selector) {
 	return queryNodeList(selector)[0];
@@ -734,45 +764,47 @@ function createElement(node) {
 		const attrValue = combinedAttr[key];
 		if (/^on[A-Z]/.test(key) && typeof attrValue === "function") {
 			const eventType = key.substring(2).toLowerCase();
-			htmlElement.removeEventListener(eventType, node.__eventHandlers?.[eventType]);
-			htmlElement.addEventListener(eventType, attrValue);
 			if (!node.__eventHandlers) node.__eventHandlers = {};
+			if (node.__eventHandlers[eventType]) htmlElement.removeEventListener(eventType, node.__eventHandlers[eventType]);
+			htmlElement.addEventListener(eventType, attrValue);
 			node.__eventHandlers[eventType] = attrValue;
 			return;
 		}
-		if (htmlElement.tagName === "input" && key === "checked") {
-			if (attrValue) htmlElement.setAttribute(key, "");
-			return;
-		}
-		if (key === "className") {
-			htmlElement.setAttribute("class", attrValue);
-			return;
-		}
-		if (key === "_id") {
-			htmlElement.setAttribute("id", attrValue);
-			return;
-		}
-		if (key === "style") {
+		if (key === "style" && typeof attrValue === "object" && attrValue !== null) {
 			Object.keys(attrValue).forEach((styleKey) => {
-				const value = cssValue(attrValue[styleKey]);
+				const styleValue = attrValue[styleKey];
+				const value = cssValue(String(styleValue));
 				htmlElement.style.setProperty(cssKey(styleKey), value);
 			});
 			return;
 		}
-		htmlElement.setAttribute(key, attrValue);
+		if (htmlElement.tagName.toUpperCase() === "INPUT" && key === "checked") {
+			if (attrValue) htmlElement.setAttribute(key, "");
+			else htmlElement.removeAttribute(key);
+			return;
+		}
+		if (key === "className" && (typeof attrValue === "string" || typeof attrValue === "number")) {
+			htmlElement.setAttribute("class", String(attrValue));
+			return;
+		}
+		if (key === "_id" && (typeof attrValue === "string" || typeof attrValue === "number")) {
+			htmlElement.setAttribute("id", String(attrValue));
+			return;
+		}
+		if (typeof attrValue === "string" || typeof attrValue === "number" || typeof attrValue === "boolean") htmlElement.setAttribute(key, String(attrValue));
 	});
 	return htmlElement;
 }
 function createElementTree(jsxNode) {
-	console.log("createElementTree: ", jsxNode);
+	if (!jsxNode) throw new Error("create element failed. invalid node");
 	function recursive(nextNode, parentNode) {
-		if (!nextNode) throw new Error("invalid node");
-		if (typeof nextNode !== "string" && nextNode.tag && parentNode) nextNode.parent = parentNode;
-		let element = createElement(nextNode);
+		if (nextNode.tag && parentNode) nextNode.parent = parentNode;
+		const element = createElement(nextNode);
 		if (nextNode.children) for (const child of nextNode.children) recursive(child, nextNode);
-		if (parentNode && parentNode.element) {
+		if (parentNode && parentNode.element && element) try {
 			parentNode.element.appendChild(element);
-			return;
+		} catch (e) {
+			console.error("Error appending child:", element, "to parent:", parentNode.element, e);
 		}
 		return element;
 	}
@@ -780,7 +812,7 @@ function createElementTree(jsxNode) {
 }
 function removeNodeElement(element) {
 	if (isFragment(element)) {
-		element.childNodes.forEach((child) => {
+		Array.from(element.childNodes).forEach((child) => {
 			removeNodeElement(child);
 		});
 		return;
@@ -792,49 +824,42 @@ function removeNodeElement(element) {
 //#region src/lib/nodeUpdater.ts
 function updateDomAttributes(newNode, oldNode) {
 	const element = oldNode.element;
-	if (!element) {
-		console.log("newNode element not found: ", newNode);
-		throw new Error("updateDomAttributes: element not found");
-	}
+	if (!element) throw new Error("updateDomAttributes: element not found");
 	if (isFragment(element) || isText(element)) return;
 	if (newNode.component?._id) element.setAttribute("node-id", newNode.component._id);
-	const attributes = {
-		...oldNode.attributes,
-		...newNode.attributes
-	};
-	Object.keys(attributes).forEach((key) => {
-		if (!Object.prototype.hasOwnProperty.call(newNode.attributes, key)) {
+	const attributes = element.attributes || [];
+	const newAttributes = newNode.attributes || {};
+	const newKeys = Object.keys(newAttributes);
+	Array.from(attributes).forEach((attr) => {
+		const key = attr.name;
+		const value = attr.value;
+		if (!newKeys.includes(key)) {
 			element.removeAttribute(key);
 			return;
 		}
-		const value = attributes[key];
 		if (isEventKey(key) && isFunction(value)) {
 			const eventType = key.toLowerCase().substring(2);
-			const newCallback = attributes[key];
-			if (oldNode.__eventHandlers && oldNode.__eventHandlers[eventType]) {
-				element.removeEventListener(eventType, oldNode.__eventHandlers[eventType]);
-				delete oldNode.__eventHandlers[eventType];
-			}
-			element.addEventListener(eventType, newCallback);
+			if (typeof value === "function") {
+				const newCallback = value;
+				if (oldNode.__eventHandlers && oldNode.__eventHandlers[eventType]) element.removeEventListener(eventType, oldNode.__eventHandlers[eventType]);
+				element.addEventListener(eventType, newCallback);
+				if (!newNode.__eventHandlers) newNode.__eventHandlers = {};
+				newNode.__eventHandlers[eventType] = newCallback;
+			} else console.error(`事件处理程序 ${key} 不是有效的函数类型`);
 			return;
 		}
 		if (key === "style") {
-			const newStyle = newNode.attributes[key];
-			const oldStyle = oldNode.attributes[key];
-			const newStyleKeys = Object.keys(newStyle);
-			const oldStyleKeys = Object.keys(oldStyle);
-			const combinedStyleKeys = new Set([...newStyleKeys, ...oldStyleKeys]);
-			combinedStyleKeys.forEach((key$1) => {
-				if (!newStyleKeys.includes(key$1)) {
-					element.style.removeProperty(key$1);
-					return;
-				}
-				const value$1 = cssValue(newStyle[key$1]);
-				element.style.setProperty(key$1, value$1);
+			const newStyle = newAttributes[key];
+			let currentStyle = cssTextToObject(element.getAttribute("style") || "");
+			Object.keys(currentStyle).forEach((styleKey) => {
+				if (!newStyle || !newStyle.hasOwnProperty(styleKey)) element.style.removeProperty(cssKey(styleKey));
+			});
+			if (newStyle && typeof newStyle === "object") Object.entries(newStyle).forEach(([styleKey, value$1]) => {
+				element.style.setProperty(cssKey(styleKey), cssValue(value$1));
 			});
 			return;
 		}
-		element.setAttribute(key, value);
+		if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") element.setAttribute(key, String(value));
 	});
 }
 function replaceNode(newNode, oldNode) {
@@ -857,7 +882,9 @@ var Component = class {
 	state = {};
 	_id = uuid();
 	setState(nextState) {
-		this.state = produce(this.state, (draft) => Object.assign(draft, nextState));
+		this.state = produce(this.state, (draft) => {
+			Object.assign(draft, nextState);
+		});
 		this.updateNode();
 	}
 	updateState(updater) {
@@ -866,17 +893,11 @@ var Component = class {
 	}
 	updateNode() {
 		const oldNode = getNodeById(this._id);
-		console.log("state", this.state);
-		console.log("updateNode", oldNode);
 		if (!oldNode) throw new Error("updateNode: node not found");
-		const component = this;
-		const newNode = component.render(oldNode.props);
-		console.log("newNode", newNode);
-		newNode.props = {
-			...oldNode.props,
-			...newNode.props
-		};
-		newNode.component = component;
+		const newNode = this.render(oldNode.props || {});
+		if (!newNode) return;
+		newNode.props = Object.assign(oldNode.props || {}, newNode.props);
+		newNode.component = this;
 		function recursive(_newNode, _oldNode) {
 			_oldNode.component = _newNode.component;
 			_oldNode.props = _newNode.props;
@@ -913,42 +934,50 @@ var Component = class {
 
 //#endregion
 //#region src/renderer.ts
-function render(node, dom) {
-	let jsxNode = node;
-	if (isClass(node)) jsxNode = createNodeByClass(node, null);
-	if (!dom) throw new Error("dom is null");
-	mount(jsxNode, dom);
+function render(node, domTarget) {
+	let jsxNode;
+	if (isClass(node)) jsxNode = createNodeByClass(node, {});
+	else jsxNode = node;
+	if (!domTarget) throw new Error("DOM target is null or undefined");
+	mount(jsxNode, domTarget);
+	return jsxNode;
 }
-function mount(jsxNode, dom) {
-	let mountPoint;
-	if (typeof dom === "string") mountPoint = document.querySelector(dom);
-	else mountPoint = dom;
-	if (!mountPoint) throw new Error("mount point not found");
-	console.log("jsxNode: ", jsxNode);
+function mount(jsxNode, domTarget) {
+	let mountPoint = null;
+	if (typeof domTarget === "string") mountPoint = document.querySelector(domTarget);
+	else mountPoint = domTarget;
+	if (!mountPoint) throw new Error(`Mount point not found for selector/element: ${domTarget}`);
 	cacheNodeTree(jsxNode);
 	const elementTree = createElementTree(jsxNode);
-	console.log("elementTree: ", elementTree);
-	mountPoint.appendChild(elementTree);
+	if (elementTree) mountPoint.appendChild(elementTree);
+	else console.warn("createElementTree returned no valid element to mount.");
 }
 
 //#endregion
 //#region src/query.ts
 function query(selector) {
-	return queryNodeList(selector).map((node) => componentProxyFactory(node));
+	return queryNodeList(selector).map((node) => componentProxyFactory(node)).filter((proxy) => proxy !== void 0);
 }
 function queryOne(selector) {
-	return query(selector)[0];
+	const results = query(selector);
+	return results.length > 0 ? results[0] : void 0;
 }
 function componentProxyFactory(node) {
-	return new Proxy({}, { get(target, prop) {
-		const component = node.component;
-		if (!component) return;
-		if (!Reflect.has(component, prop)) throw new Error("instanceProxyFactory: invalid property");
-		const p = prop;
-		const value = component[p];
-		if (typeof value === "function") return value.bind(component);
-		return value;
-	} });
+	if (!node.component) return void 0;
+	return new Proxy(node.component, {
+		get(targetComponent, prop, receiver) {
+			if (prop === "isProxy") return true;
+			if (Reflect.has(targetComponent, prop)) {
+				const value = Reflect.get(targetComponent, prop, receiver);
+				if (typeof value === "function") return value.bind(targetComponent);
+				return value;
+			}
+			return void 0;
+		},
+		set(targetComponent, prop, newValue, receiver) {
+			return Reflect.set(targetComponent, prop, newValue, receiver);
+		}
+	});
 }
 
 //#endregion

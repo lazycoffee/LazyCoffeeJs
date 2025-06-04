@@ -4,29 +4,38 @@ import { v4 as uuidV4 } from 'uuid';
 export function uuid(): string {
     return uuidV4();
 }
-export function isFunction(obj: unknown): obj is Function { // obj: any -> unknown
+export function isFunction(obj: unknown): obj is Function {
+    // obj: any -> unknown
     return typeof obj === 'function';
 }
-export function isClass(obj: unknown): obj is Function { // obj: any -> unknown
+export function isClass(obj: unknown): obj is Function {
+    // obj: any -> unknown
     if (!isFunction(obj)) {
         return false;
     }
     // Assuming obj is a function here due to the check above.
     return /^class\s/.test(Function.prototype.toString.call(obj as Function));
 }
-export function isFragment(element: unknown): element is DocumentFragment { // element: any -> unknown
-    return !!element && (element as Node).nodeType === Node.DOCUMENT_FRAGMENT_NODE;
+export function isFragment(element: unknown): element is DocumentFragment {
+    // element: any -> unknown
+    return (
+        !!element && (element as Node).nodeType === Node.DOCUMENT_FRAGMENT_NODE
+    );
 }
-export function isText(element: unknown): element is Text { // element: any -> unknown
+export function isText(element: unknown): element is Text {
+    // element: any -> unknown
     return !!element && (element as Node).nodeType === Node.TEXT_NODE;
 }
-export function isHTMLElement(element: unknown): element is HTMLElement { // element: any -> unknown
+export function isHTMLElement(element: unknown): element is HTMLElement {
+    // element: any -> unknown
     return element instanceof HTMLElement;
 }
-export function isHTMLCollection(element: unknown): element is HTMLCollection { // element: any -> unknown
+export function isHTMLCollection(element: unknown): element is HTMLCollection {
+    // element: any -> unknown
     return element instanceof HTMLCollection;
 }
-export function cssValue(value: unknown): string { // value: any -> unknown
+export function cssValue(value: unknown): string {
+    // value: any -> unknown
     if (typeof value === 'number') {
         return `${value}`;
     }
@@ -43,6 +52,18 @@ export function cssKey(key: string): string {
 }
 export function isEventKey(key: string): boolean {
     return /^on[A-Z]/.test(key);
+}
+export function cssTextToObject(cssText: string): Record<string, string> {
+    const styleObject: Record<string, string> = {};
+    const styleRules = cssText.split(';');
+    styleRules.forEach((rule) => {
+        let [key, value] = rule.split(':').map((s) => s.trim());
+        key = key?.replace(/-([a-z])/g, (match, p1) => p1.toUpperCase());
+        if (key && value) {
+            styleObject[key] = value;
+        }
+    });
+    return styleObject;
 }
 export function removeitemInArray<T>(arr: T[], item: T) {
     const index = arr.indexOf(item);
