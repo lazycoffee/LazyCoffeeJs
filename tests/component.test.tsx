@@ -1,11 +1,10 @@
 import { describe, expect, it } from 'bun:test';
 import { Component } from '../src/component';
-import { jsx, JsxItem, jsxs } from '../src/jsx-runtime';
+import { JsxItem } from '../src/jsx-runtime';
 import { NodeItem } from '@/types/nodeTree';
 import { createElementTree } from '@/element';
-import { init } from './lib/common';
-
-init();
+import { render } from '@/renderer';
+import { queryOne } from '@/query';
 
 type ListItem = {
     id: number;
@@ -67,63 +66,72 @@ describe('Component', () => {
             const listEL: JsxItem[] = list
                 .map((item: ListItem) => {
                     const style = { color: item.done ? 'red' : 'green' };
-                    const child1 = jsx('span', {
-                        children: item.name,
-                    });
-                    const button = jsx('button', {
-                        onClick: this.doneItem.bind(this, item.id),
-                        children: '删除',
-                    });
+                    const child1 = <span>{item.name}</span>;
+                    const button = (
+                        <button onClick={this.doneItem.bind(this, item.id)}>
+                            删除
+                        </button>
+                    );
                     const child2 = item.done ? '' : button;
                     const child3 = item.children
                         ? this.createList(item.children)
                         : [];
-                    return jsxs('li', {
-                        style,
-                        children: [child1, child2, child3],
-                    });
+                    return <li style={style}>{[child1, child2, child3]}</li>;
                 })
                 .filter(Boolean);
-            return jsx('ul', { children: listEL });
+            return <ul>{listEL}</ul>;
         }
         render() {
             const { list } = this.state;
             const listEl = this.createList(list);
-            return jsx('div', {
-                id: 'list',
-                children: listEl,
-            });
+            return <div id="list">{listEl}</div>;
         }
     }
-    const appInstance = new App();
+    render(<App />, document.body);
+    const appInstance = queryOne('#list') as App;
     it('should have a state property', () => {
         expect(appInstance.state.list).toBeDefined();
     });
     const nodeTree = appInstance.render() as NodeItem;
     const element = createElementTree(nodeTree) as HTMLElement;
+    const ul = element.firstChild as HTMLElement;
     it('should render a list of items', () => {
         expect(element).toBeDefined();
         if (!element) {
             return;
         }
-        // verify root element
         expect(element.tagName.toUpperCase()).toBe('DIV');
         expect(element.getAttribute('id')).toBe('list');
-        const ul = element.firstChild as HTMLElement;
         expect(ul.tagName.toUpperCase()).toBe('UL');
-        // verify first item
-        const li = ul.firstChild as HTMLElement;
+        expect(ul.children.length).toBe(2);
+    });
+    const li = ul.firstChild as HTMLElement;
+    const span = li.firstChild as HTMLElement;
+    it('each item should have a person name', () => {
         expect(li.tagName.toUpperCase()).toBe('LI');
-        const span = li.firstChild as HTMLElement;
         expect(span.tagName.toUpperCase()).toBe('SPAN');
         expect(span.textContent).toBe('张三');
-        // verify sub children
-        const subChild = li.children[2] as HTMLElement;
+    });
+    const subChild = li.children[2] as HTMLElement;
+    const subChildLi = subChild.firstChild as HTMLElement;
+    const subChildSpan = subChildLi.firstChild as HTMLElement;
+    it('should render a list of sub children', () => {
         expect(subChild.tagName.toUpperCase()).toBe('UL');
-        const subChildLi = subChild.firstChild as HTMLElement;
         expect(subChildLi.tagName.toUpperCase()).toBe('LI');
-        const subChildSpan = subChildLi.firstChild as HTMLElement;
+        expect(subChild.children.length).toBe(2);
+    });
+    it('sub child should render a person name', () => {
         expect(subChildSpan.tagName.toUpperCase()).toBe('SPAN');
         expect(subChildSpan.textContent).toBe('张三儿1');
+    });
+    it('sub child li should style color green', () => {
+        expect(subChildLi.style.color).toBe('green');
+    });
+    it('should change sub child li style color to red', () => {
+        const button = subChildLi.children[1] as HTMLButtonElement;
+        button.click();
+        setTimeout(() => {
+            expect(subChildLi.style.color).toBe('red');
+        }, 100);
     });
 });

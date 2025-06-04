@@ -5,8 +5,7 @@ import {
     removeNodeElement,
 } from '../src/element';
 import { NodeItem } from '../src/types/nodeTree';
-import { init } from './lib/common';
-init();
+
 describe('createElement(node: NodeItem)', () => {
     beforeEach(() => {
         document.body.innerHTML = '';

@@ -26,6 +26,7 @@ export function render(
         throw new Error('DOM target is null or undefined');
     }
     mount(jsxNode, domTarget);
+    return jsxNode;
 }
 
 export function mount(jsxNode: NodeItem, domTarget: string | HTMLElement) {

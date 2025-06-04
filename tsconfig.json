@@ -9,8 +9,10 @@
         "paths": {
             "@/*": ["src/*"]
         },
-        "skipLibCheck": true
+        "skipLibCheck": true,
+        "jsx": "react-jsx",
+        "jsxImportSource": "@"
     },
-    "include": ["src/**/*", "tests/**/*"],
+    "include": ["src/**/*", "tests/**/*", "src/types/jsx.d.ts"],
     "exclude": ["node_modules"]
 }

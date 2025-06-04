@@ -1,7 +1,7 @@
 import { Component } from './component';
 import { isClass } from './lib/helper';
 import { NodeItem, Props } from './types/nodeTree';
-import { JSONType, JSONValue } from './types/type';
+import { JSONType } from './types/type';
 
 export type ComponentConstructor = new (props?: JSONType) => Component<any>;
 type FunctionalComponent = (props?: JSONType) => NodeItem | null | undefined;

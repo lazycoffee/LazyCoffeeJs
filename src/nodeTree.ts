@@ -4,14 +4,19 @@ let nodeTree: NodeItem;
 export function cacheNodeTree(tree: NodeItem) {
     nodeTree = tree;
 }
-function traverseTree(tree: NodeItem, callback: (node: NodeItem) => boolean | void) { // tree: any -> NodeItem, node: any -> NodeItem
+function traverseTree(
+    tree: NodeItem,
+    callback: (node: NodeItem) => boolean | void
+) {
+    // tree: any -> NodeItem, node: any -> NodeItem
     if (!tree) return; // Added null check for tree
     if (callback(tree)) {
         return;
     }
     if (tree.children) {
         if (Array.isArray(tree.children)) {
-            tree.children.forEach((child: NodeItem) => { // child: any -> NodeItem
+            tree.children.forEach((child: NodeItem) => {
+                // child: any -> NodeItem
                 traverseTree(child, callback);
             });
         } else {
@@ -32,7 +37,8 @@ export function getNodeById(id: string): NodeItem | undefined {
     return result;
 }
 export function queryNodeList(selector: string): NodeItem[] {
-    if (!document || typeof document.querySelectorAll !== 'function') { // Guard against undefined document
+    if (!document || typeof document.querySelectorAll !== 'function') {
+        // Guard against undefined document
         return [];
     }
     const elements = document.querySelectorAll(selector);
